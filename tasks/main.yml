@@ -1,0 +1,43 @@
+---
+# tasks file for lighthouse-role
+- name: Create web root directory for Lighthouse
+  become: true
+  ansible.builtin.file:
+    path: "{{ lighthouse_dir }}"
+    state: directory
+    mode: "0755"
+    owner: "{{ lighthouse_user }}"
+    group: "{{ lighthouse_group }}"
+
+- name: Download Lighthouse archive
+  ansible.builtin.get_url:
+    url: "{{ lighthouse_url }}"
+    dest: "{{ lighthouse_archive_dest }}"
+    mode: "0644"
+
+- name: Extract Lighthouse archive
+  become: true
+  ansible.builtin.unarchive:
+    src: "{{ lighthouse_archive_dest }}"
+    dest: "{{ lighthouse_dir }}"
+    remote_src: true
+    extra_opts:
+      - "--strip-components=1"
+    owner: "{{ lighthouse_user }}"
+    group: "{{ lighthouse_group }}"
+
+- name: Apply SELinux file context to Lighthouse web root
+  become: true
+  ansible.builtin.file:
+    path: "{{ lighthouse_dir }}"
+    setype: httpd_sys_content_t
+    recurse: true
+    state: directory
+
+- name: Deploy Nginx site configuration for Lighthouse
+  become: true
+  ansible.builtin.template:
+    src: lighthouse.conf.j2
+    dest: "{{ lighthouse_nginx_conf_dest }}"
+    mode: "0644"
+  notify: Reload Nginx service

@@ -1,0 +1,6 @@
+---
+# vars file for lighthouse-role
+lighthouse_archive_dest: "/tmp/lighthouse-{{ lighthouse_version }}.tar.gz"
+lighthouse_nginx_conf_dest: "/etc/nginx/conf.d/lighthouse.conf"
+lighthouse_user: "nginx"
+lighthouse_group: "nginx"

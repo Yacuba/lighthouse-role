@@ -1,0 +1,52 @@
+---
+- name: Verify LightHouse deployment
+  hosts: all
+  gather_facts: true
+  tasks:
+    - name: Check LightHouse web root directory
+      ansible.builtin.stat:
+        path: /var/www/lighthouse
+      register: lighthouse_dir
+
+    - name: Assert LightHouse directory exists
+      ansible.builtin.assert:
+        that:
+          - lighthouse_dir.stat.exists
+          - lighthouse_dir.stat.isdir
+        fail_msg: "LightHouse directory does not exist"
+
+    - name: Check LightHouse index.html
+      ansible.builtin.stat:
+        path: /var/www/lighthouse/index.html
+      register: index_html
+
+    - name: Assert index.html exists
+      ansible.builtin.assert:
+        that:
+          - index_html.stat.exists
+        fail_msg: "LightHouse index.html is missing"
+
+    - name: Check Nginx configuration syntax
+      become: true
+      ansible.builtin.command: nginx -t
+      register: nginx_test
+      changed_when: false
+
+    - name: Assert Nginx configuration is valid
+      ansible.builtin.assert:
+        that:
+          - nginx_test.rc == 0
+        fail_msg: "Nginx configuration syntax is invalid"
+
+    - name: Query LightHouse web interface over HTTP
+      ansible.builtin.uri:
+        url: http://127.0.0.1:80
+        return_content: true
+      register: http_response
+
+    - name: Assert LightHouse HTTP response is 200 OK and contains title
+      ansible.builtin.assert:
+        that:
+          - http_response.status == 200
+          - "'lighthouse' in http_response.content | lower"
+        fail_msg: "LightHouse web interface is not returning expected content"

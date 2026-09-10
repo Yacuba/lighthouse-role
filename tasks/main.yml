@@ -14,6 +14,11 @@
     url: "{{ lighthouse_url }}"
     dest: "{{ lighthouse_archive_dest }}"
     mode: "0644"
+    timeout: 30
+  register: download_lighthouse
+  until: download_lighthouse is not failed
+  retries: 5
+  delay: 3
 
 - name: Extract Lighthouse archive
   become: true
@@ -33,6 +38,9 @@
     setype: httpd_sys_content_t
     recurse: true
     state: directory
+  when:
+    - ansible_facts.selinux is defined
+    - ansible_facts.selinux.status | default('') == 'enabled'
 
 - name: Deploy Nginx site configuration for Lighthouse
   become: true

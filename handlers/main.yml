@@ -5,9 +5,11 @@
   ansible.builtin.service:
     name: nginx
     state: reloaded
+  when: ansible_facts.service_mgr | default('') == 'systemd'
 
 - name: Restart Nginx service
   become: true
   ansible.builtin.service:
     name: nginx
     state: restarted
+  when: ansible_facts.service_mgr | default('') == 'systemd'
